@@ -39,6 +39,7 @@ internal sealed class CarbonHotkeyNative : ICarbonHotkeyNative
 
         if (status == 0) return true;
 
+        ReportStatus("InstallEventHandler", status);
         handler = IntPtr.Zero;
         handlerProc = null;
         return false;
@@ -50,7 +51,9 @@ internal sealed class CarbonHotkeyNative : ICarbonHotkeyNative
 
         // If Carbon refuses to remove it, the handler is still installed and still points at the
         // delegate, so the delegate is kept.
-        if (Carbon.RemoveEventHandler(handler) == 0) handlerProc = null;
+        var status = Carbon.RemoveEventHandler(handler);
+        if (status == 0) handlerProc = null;
+        else ReportStatus("RemoveEventHandler", status);
     }
 
     public int RegisterHotkey(uint keyCode, uint carbonModifiers, uint id, out IntPtr hotkey)
@@ -63,13 +66,21 @@ internal sealed class CarbonHotkeyNative : ICarbonHotkeyNative
             0,
             out hotkey);
 
-        if (status != 0) hotkey = IntPtr.Zero;
+        if (status != 0)
+        {
+            ReportStatus("RegisterEventHotKey", status);
+            hotkey = IntPtr.Zero;
+        }
+
         return status;
     }
 
     public void UnregisterHotkey(IntPtr hotkey)
     {
-        if (hotkey != IntPtr.Zero) Carbon.UnregisterEventHotKey(hotkey);
+        if (hotkey == IntPtr.Zero) return;
+
+        var status = Carbon.UnregisterEventHotKey(hotkey);
+        if (status != 0) ReportStatus("UnregisterEventHotKey", status);
     }
 
     // What Carbon's handler runs: the callback's status goes back to Carbon. An exception must not cross
@@ -80,9 +91,28 @@ internal sealed class CarbonHotkeyNative : ICarbonHotkeyNative
         {
             return onPressed();
         }
+        catch (Exception exception)
+        {
+            Report($"AutoTyper: the hotkey handler threw {exception.GetType().Name}: {exception.Message}");
+            return 0;
+        }
+    }
+
+    // One line on stderr for a Carbon call that did not return noErr (or for a swallowed exception). There
+    // is no log file; a hotkey that silently does nothing is otherwise impossible to diagnose, and running
+    // the app from Terminal shows these lines. Writing must never fail the caller, and the handler runs
+    // inside a native callback, where an exception would end the process.
+    static void ReportStatus(string call, int status) =>
+        Report($"AutoTyper: {call} returned OSStatus {status}");
+
+    static void Report(string line)
+    {
+        try
+        {
+            Console.Error.WriteLine(line);
+        }
         catch
         {
-            return 0;
         }
     }
 }

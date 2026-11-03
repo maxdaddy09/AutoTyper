@@ -12,6 +12,8 @@ namespace AutoTyper.Mac;
 // keeps state, so that is safe.
 public sealed class MacPlatformServices : IPlatformServices
 {
+    const string OpenTool = "/usr/bin/open";
+
     const string AccessibilitySettingsUrl =
         "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
 
@@ -45,7 +47,9 @@ public sealed class MacPlatformServices : IPlatformServices
     {
         try
         {
-            startProcess(new ProcessStartInfo("open", AccessibilitySettingsUrl) { UseShellExecute = false });
+            // The full path: .NET on Unix may look a bare name up in the app's own folder and the current
+            // folder before PATH, and this has to be the system's open.
+            startProcess(new ProcessStartInfo(OpenTool, AccessibilitySettingsUrl) { UseShellExecute = false });
         }
         catch (Exception)
         {

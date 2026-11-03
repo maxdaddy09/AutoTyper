@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace AutoTyper.Mac.Tests;
 
 // Everything native here is only checked for shape: nothing in these tests calls into macOS on Windows.
-// The real check is `AutoTyper --selftest` on a Mac, which the last test runs when it is on one.
+// The real check is `AutoTyper --selftest` on a Mac, which the packaged-app step in ci.yml runs.
 public class NativeTests
 {
     const string NativeNamespace = "AutoTyper.Mac.Native";
@@ -96,6 +96,20 @@ public class NativeTests
     }
 
     [Fact]
+    public void EveryDllImportInTheAssemblyLivesInTheNativeNamespace()
+    {
+        // The self-test's completeness check only looks in the Native namespace, so a P/Invoke declared
+        // anywhere else would escape it.
+        var outside = typeof(MacKeySender).Assembly.GetTypes()
+            .SelectMany(t => t.GetMethods(
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            .Where(m => m.GetCustomAttribute<DllImportAttribute>() != null && m.DeclaringType!.Namespace != NativeNamespace)
+            .Select(m => $"{m.DeclaringType!.FullName}.{m.Name}");
+
+        Assert.Empty(outside);
+    }
+
+    [Fact]
     public void BooleansCrossTheNativeBoundaryAsOneByte()
     {
         // A C bool / Boolean is one byte; the default .NET marshalling for bool is four.
@@ -147,12 +161,18 @@ public class NativeTests
     [Fact]
     public void SelfTest_ReportsAccordingToThePlatform()
     {
+        // On a Mac this test does not run the native probe. The probe calls into CoreGraphics, Accessibility
+        // and Carbon; inside the test host it would run on a worker thread (Carbon's application event
+        // target belongs to the main thread) and possibly without a window-server session, so it could
+        // abort or fail for reasons that say nothing about the code. The real check on macOS is the
+        // packaged app's `--selftest` step in .github/workflows/ci.yml, which runs it on the main thread.
+        if (OperatingSystem.IsMacOS()) return;
+
         var output = new StringWriter();
 
         var exitCode = NativeSelfTest.Run(output);
 
-        var expected = OperatingSystem.IsMacOS() ? "selftest ok" : "selftest: not macOS";
-        Assert.Equal(expected, output.ToString().Trim());
+        Assert.Equal("selftest: not macOS", output.ToString().Trim());
         Assert.Equal(0, exitCode);
     }
 

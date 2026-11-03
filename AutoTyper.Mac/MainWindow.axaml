@@ -81,6 +81,6 @@
     <TextBlock Grid.Row="5"
                Foreground="Gray"
                TextWrapping="Wrap"
-               Text="Types into the frontmost app. macOS asks you to allow AutoTyper under Privacy &amp; Security → Accessibility." />
+               Text="Types into the frontmost app. Allow AutoTyper under System Settings → Privacy &amp; Security → Accessibility." />
   </Grid>
 </Window>

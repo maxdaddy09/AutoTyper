@@ -128,7 +128,9 @@ public class MacPlatformServicesTests
         platform.OpenPermissionSettings();
 
         var start = Assert.Single(started);
-        Assert.Equal("open", start.FileName);
+        // The full path: .NET on Unix may look a bare name up in the app's own folder and the current
+        // folder before PATH, and "open" must be the system tool, not a file that happens to sit there.
+        Assert.Equal("/usr/bin/open", start.FileName);
         Assert.Equal(SettingsUrl, start.Arguments);
         Assert.False(start.UseShellExecute);
     }
