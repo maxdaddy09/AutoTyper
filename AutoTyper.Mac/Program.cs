@@ -25,9 +25,25 @@ internal static class Program
 
     // The one place that chooses the platform and the settings file. The caller subscribes to the
     // view model and then calls Start().
+    //
+    // macOS gets the real services and the settings in ~/Library/Application Support/AutoTyper; anywhere
+    // else gets the preview, which types nothing and keeps its own settings. The macOS services are only
+    // ever built on macOS.
     internal static MainViewModel CreateViewModel(Func<bool> isWindowActive)
     {
-        var settingsPath = PreviewSettingsPath;
-        return new MainViewModel(new PreviewPlatformServices(), Settings.Load(settingsPath), settingsPath, isWindowActive);
+        IPlatformServices platform;
+        string settingsPath;
+        if (OperatingSystem.IsMacOS())
+        {
+            platform = new MacPlatformServices();
+            settingsPath = MacPaths.SettingsPath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        }
+        else
+        {
+            platform = new PreviewPlatformServices();
+            settingsPath = PreviewSettingsPath;
+        }
+
+        return new MainViewModel(platform, Settings.Load(settingsPath), settingsPath, isWindowActive);
     }
 }

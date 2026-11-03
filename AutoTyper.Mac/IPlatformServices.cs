@@ -21,6 +21,7 @@ public interface IPlatformServices
     // True when running somewhere other than macOS: nothing is typed and the hotkey never fires.
     bool IsPreview { get; }
 
+    // The sender is used from a thread-pool thread while a job runs, so it must be safe to call there.
     IKeySender CreateKeySender();
 
     IGlobalHotkey CreateHotkey();
@@ -31,6 +32,7 @@ public interface IPlatformServices
     // Opens the system page where the user switches the permission on.
     void OpenPermissionSettings();
 
-    // Whether any of these modifier keys is physically held down right now.
+    // Whether any of these modifier keys is physically held down right now. Polled from a thread-pool
+    // thread while a job waits for the hotkey's keys to be released, so it must be thread-safe.
     bool AreModifiersDown(MacModifiers modifiers);
 }
