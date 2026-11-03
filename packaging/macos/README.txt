@@ -21,9 +21,17 @@ You only have to allow it once for each version.
    Next to the message about AutoTyper, click "Open Anyway", then enter your password.
 4. Double-click AutoTyper.app again and click Open.
 
+If the "Open Anyway" button is not there, try to open the app again first; macOS only
+offers it for a while after a blocked attempt.
+
 If you would rather use Terminal, you can skip steps 2 and 3: type
 "xattr -dr com.apple.quarantine " (with a space at the end), drag AutoTyper.app onto the
 Terminal window, press Return, and then open the app as usual.
+
+If macOS says AutoTyper is damaged after you unzipped it with a third-party tool, unzip
+the download again with Finder's Archive Utility (double-click the zip) or, in Terminal,
+with "ditto -x -k <zip> <folder>", and use the xattr command above if it still will not
+open.
 
 The exact words on these screens can differ a little between macOS versions.
 
@@ -53,14 +61,18 @@ How to use
    Press it again to stop.
 
 To change the hotkey, click the Hotkey box and press the combination you want. It needs
-Control, Option, Shift or Command, or can be an F-key on its own. The hotkey, mode,
-delay and speed are remembered. The text you paste is never saved.
+Control, Option, Shift or Command, or can be an F-key on its own. Keys are named by their
+position on a US keyboard, so on other layouts (for example Dvorak or AZERTY) the name
+shown can differ from the letter printed on the key cap, and the default
+Control+Option+T is the key in that position. The hotkey, mode, delay and speed are
+remembered. The text you paste is never saved.
 
 Good to know
 ------------
-- On macOS 15.0 and 15.1, shortcuts whose only modifier is Option (or Option+Shift)
-  have been reported to be accepted but never fire. The default, Control+Option+T,
-  is not affected. When you pick your own, add Control or Command as well.
+- On macOS 15 (reported on 15.0 and 15.1, possibly later), shortcuts whose only
+  modifier is Option (or Option+Shift) may be accepted but never fire. The default,
+  Control+Option+T, is not affected. When you pick your own, add Control or Command as
+  well.
 - TextEdit can rewrite what is typed: turn off "Correct spelling automatically" and
   smart quotes (Edit -> Spelling and Grammar, and Edit -> Substitutions) if you want
   exact text there. Most other programs are not affected.

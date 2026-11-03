@@ -2,20 +2,22 @@
 
 A checklist for trying the macOS version of AutoTyper on a real Mac. So far the Mac code has been
 built and unit-tested without a Mac to run it on, so this is its first real run. Work through it and
-tell me what you see. Passes are good news, but anything that surprised you is worth a note even if it
-worked.
+report what you see by opening an issue on GitHub (https://github.com/maxdaddy09/AutoTyper/issues).
+Passes are good news, but anything that surprised you is worth a note even if it worked.
 
 **You need:** an Apple Silicon Mac with macOS 15 or newer, TextEdit, a web browser (Safari, and Chrome
 if you have it) and Terminal.
 
 Tick each box as you go. "Expect" says what should happen. When it does not, write down what happened
-instead and use the last section, "If something fails, tell me:". The exact wording of macOS dialogs
+instead and use the last section, "If something fails, report this:". The exact wording of macOS dialogs
 differs a little between versions, so small differences in those are fine.
 
 ## 1. Download and unzip
 
 - [ ] Download `AutoTyper-<version>-macos-arm64.zip` (from the Releases page, or from the build
   artifact if there is no release yet) and unzip it by double-clicking it in Finder.
+  - A download from the GitHub Actions page (a build artifact) is a zip inside a zip: unzip what you
+    downloaded first, and then unzip the `AutoTyper-<version>-macos-arm64.zip` that comes out of it.
   - Expect: a folder `AutoTyper-<version>-macos-arm64` holding `AutoTyper.app`, `README.txt` and
     `LICENSE.txt`.
 - [ ] Optional: in Terminal, go to that folder (type `cd `, drag the folder into the Terminal window,
@@ -76,13 +78,14 @@ both.
   the big box and set Delay to 200 ms, so typing lasts long enough to watch. Click into the TextEdit
   document so it is in front.
 - [ ] Press **Control+Option+T**.
-  - Expect: AutoTyper's status line changes to `Typing...` (later with progress such as
-    `Typing... 12/140`), the text appears in the TextEdit document, and at the end the status reads
+  - Expect: AutoTyper's status line changes to `Typing…` (later with progress such as
+    `Typing… 12/140`), the text appears in the TextEdit document, and at the end the status reads
     `Done`. The **Open Accessibility settings** button is gone.
   - If the status never changes, AutoTyper never received the press. That is the result I most need
-    to know about: it means the global hotkey is not being delivered. Report it as "no press
-    received", with your macOS version. A fallback exists.
-  - If the status says `Typing...` but nothing appears in TextEdit, report that as well.
+    to know about: it means the global hotkey is not being delivered. Report it exactly as "no press
+    received", with your macOS version; there is a known alternative approach to try if that is what
+    happens.
+  - If the status says `Typing…` but nothing appears in TextEdit, report that as well.
 - [ ] With text in the box and AutoTyper's own window in front, press the hotkey.
   - Expect: the status reads `Click into the target window first`, and nothing is typed.
 - [ ] Empty AutoTyper's text box, click into TextEdit and press the hotkey.
@@ -98,20 +101,26 @@ both.
   - Expect: the status says that hotkey can't be used, and the box keeps `Control+Option+Y`.
 - [ ] Optional: try a combination macOS already uses, such as Command+Space (Spotlight). Write down what
   the box and the status show, and whether it fires.
-- [ ] Only if your macOS is 15.0 or 15.1: set `Option+Shift+T` and press it with TextEdit in front.
-  Shortcuts whose only modifier is Option (or Option+Shift) are reported to register without firing.
-  Write down whether it types.
+- [ ] On any macOS version: set `Option+Shift+T` and press it with TextEdit in front. On macOS 15
+  (reported on 15.0 and 15.1, possibly later), shortcuts whose only modifier is Option (or Option+Shift)
+  may register without firing. Write down whether it types, and your macOS version.
+- [ ] Click the Hotkey box and press **Control+Command+K**.
+  - Expect: the box shows `Control+Command+K` and the status reads `Ready`. Put text in the box, click
+    into TextEdit and press Control+Command+K: it types. This checks the Command key as a hotkey
+    modifier.
 - [ ] Set the hotkey back to `Control+Option+T` for the rest.
 
 ## 7. Typing into TextEdit
 
-Use Letters mode and Delay 50. Start each check in an empty TextEdit document.
+Use Delay 50 and start each check in an empty TextEdit document. Use Letters mode, except for the two
+checks marked **Words mode**: they exercise the limit on how much text goes into one key event, which
+Letters mode never reaches (the first of them explains why).
 
 - [ ] Plain text: `The quick brown fox jumps over the lazy dog. 0123456789`
   - Expect: it arrives exactly as written.
 - [ ] Three short lines with a blank line between two of them, and a line that starts with a Tab.
   - Expect: the line breaks and the tab arrive where they were.
-- [ ] A long string with no spaces:
+- [ ] **Words mode.** A long string with no spaces:
 
   ```
   0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -119,7 +128,11 @@ Use Letters mode and Delay 50. Start each check in an empty TextEdit document.
 
   - AutoTyper hands macOS at most 20 characters per key event and splits longer text into pieces. That
     limit was found by experiment, not from Apple's documentation, so check that it holds.
+  - Why Words mode: in Letters mode every character is sent on its own, so no key event ever comes near
+    20 characters and this check would pass without testing anything. In Words mode this string is one
+    word, which AutoTyper sends as five pieces of 20 characters (20, 20, 20, 20, 20).
   - Expect: all 100 digits arrive, in order, none dropped or repeated.
+  - Then switch back to Letters.
 - [ ] Accents, other scripts and emoji:
 
   ```
@@ -127,14 +140,18 @@ Use Letters mode and Delay 50. Start each check in an empty TextEdit document.
   ```
 
   - Expect: it arrives exactly. No question marks, boxes or missing characters.
-- [ ] Emoji at a piece boundary (an emoji is two of those characters, and the first one sits across the
-  boundary of the 20-character pieces):
+- [ ] **Words mode.** Emoji at a piece boundary (an emoji counts as two of those characters, and the
+  first one sits across the boundary of the 20-character pieces):
 
   ```
   aaaaaaaaaaaaaaaaaaa😀bbbbbbbbbbbbbbbbbbb😀ccc
   ```
 
+  - Like the digits, this line has no spaces, so Words mode sends it as one word that is split into
+    pieces. In Letters mode it would never be split. AutoTyper should end the first piece one character
+    early (after the 19 letters) rather than cut the emoji in half.
   - Expect: it arrives exactly, with both emoji whole.
+  - Then switch back to Letters.
 - [ ] TextEdit can rewrite what is typed. With Edit > Spelling and Grammar > **Correct Spelling
   Automatically** and Edit > Substitutions > **Smart Quotes** on, type `teh "quoted" don't ` and see
   whether TextEdit changes it. That is TextEdit, not AutoTyper. Turn both off and type it again.
@@ -145,7 +162,13 @@ Use Letters mode and Delay 50. Start each check in an empty TextEdit document.
 - [ ] In Safari, click into any text box that you do not mind typing in, such as a search box (do not
   press Return), and type `Hello from AutoTyper`.
   - Expect: it arrives exactly. Repeat in Chrome if you have it.
-- [ ] A page that blocks pasting. Save this as `nopaste.html` and open it in the browser:
+- [ ] A long word in each browser. Browsers are where multi-character key events are most likely to be
+  handled differently, so this repeats the 20-character check from section 7 there. Choose **Words**
+  mode, click into a text box in Safari, and type the 100-digit string from section 7 (one word, sent as
+  five pieces of 20 characters). Repeat in Chrome if you have it, then switch back to Letters.
+  - Expect: all 100 digits arrive, in order, none dropped or repeated, in each browser.
+- [ ] A page that blocks pasting. Save this as `nopaste.html` (in TextEdit choose Format > Make Plain Text
+  first, because TextEdit saves rich text by default) and open it in the browser:
 
   ```html
   <textarea rows="8" cols="60" onpaste="return false" placeholder="Paste is blocked here"></textarea>
@@ -175,6 +198,17 @@ Use Letters mode and Delay 50. Start each check in an empty TextEdit document.
     arrives.
 - [ ] Press the hotkey once more.
   - Expect: a new run starts from the beginning of the text.
+- [ ] A very large paste. In Terminal run this, which puts about 100,000 characters on the clipboard:
+
+  ```sh
+  yes 'lorem ipsum dolor sit amet' | head -n 4000 | pbcopy
+  ```
+
+  Choose Letters with Delay 0, empty the text box, and paste with Command+V.
+  - Expect: AutoTyper's window stays responsive (you can scroll and click in the text box, and the
+    window moves and closes normally).
+  - Click into TextEdit and press the hotkey: typing starts. Press the hotkey again after a few
+    seconds: typing stops and the status reads `Stopped`.
 
 ## 11. Holding the hotkey's modifiers when typing starts
 
@@ -230,7 +264,7 @@ shortcuts. Whether that is enough on a real Mac is not known, so check both case
 - [ ] Open AutoTyper again and press its hotkey.
   - Expect: it works, so the old hotkey was released properly.
 
-## If something fails, tell me:
+## If something fails, report this:
 
 - Your macOS version (Apple menu > About This Mac) and the chip (for example M2).
 - What you did, step by step, what you expected, and what happened.
@@ -246,3 +280,6 @@ shortcuts. Whether that is enough on a real Mac is not known, so check both case
 
   It should print `selftest ok`. If it prints lines starting `selftest failed:`, copy all of them. If
   macOS blocks the command in the same way as in section 2, allow the app first.
+- If the app does not open, or the hotkey shows `(none)`, run `AutoTyper.app/Contents/MacOS/AutoTyper`
+  from Terminal in the same way and copy what it prints. (Launching from Terminal makes Terminal the app
+  that needs the Accessibility permission, so use this only for diagnosis.)

@@ -1,7 +1,7 @@
 # AutoTyper
 
 Paste text into AutoTyper, click into any window, press a hotkey, and AutoTyper types the text
-there as real keystrokes. Because it types instead of pasting, it works in fields that block
+there as real keystrokes. Because it types instead of pasting, it should work in fields that block
 pasting.
 
 ![AutoTyper window](docs/screenshot.png)
@@ -50,7 +50,7 @@ Tested on Windows 11 (64-bit).
 
 ## AutoTyper on macOS
 
-**Status:** the macOS version is new in 1.1.0 and is still being tested on real Macs. Test reports
+**Status:** the macOS version is new in 1.1.0 and has not been tested on a real Mac yet. Test reports
 are welcome: [docs/macos-testing.md](docs/macos-testing.md) lists what to try and what to include in
 a report.
 
@@ -70,7 +70,8 @@ Intel (x64) build has not been tested.
 4. Double-click `AutoTyper.app` again and click **Open**.
 
 You only have to do this once for each version. The exact wording of these dialogs may differ between
-macOS versions.
+macOS versions. If the **Open Anyway** button is not there, try to open the app again first; macOS only
+offers it for a while after a blocked attempt.
 
 If you prefer Terminal, you can skip steps 2 and 3: run this first (type it, drag `AutoTyper.app` onto
 the Terminal window to fill in the path, press Return), then open the app as usual:
@@ -79,30 +80,38 @@ the Terminal window to fill in the path, press Return), then open the app as usu
 xattr -dr com.apple.quarantine /path/to/AutoTyper.app
 ```
 
+If macOS says AutoTyper is damaged after you unzipped it with a third-party tool, unzip the download
+again with Finder's Archive Utility (double-click the zip) or in Terminal with
+`ditto -x -k <zip> <folder>`, and use the `xattr -dr com.apple.quarantine` command above if it still
+will not open.
+
 ### Allow it to type
 
 macOS only lets an app type for you once you allow it. Open **System Settings > Privacy & Security >
 Accessibility** and switch **AutoTyper** on (if it is not in the list, click **+** and choose
 `AutoTyper.app`). If AutoTyper's window shows a button **Open Accessibility settings**, it opens
-that page for you. If it still says it needs permission afterwards, quit AutoTyper and open it again.
+that page for you. After you switch it on, press the hotkey again; if it still says it needs permission
+afterwards, quit AutoTyper and open it again.
 
 Each build of AutoTyper has its own ad-hoc signature, so after you install a newer version macOS may
 no longer trust it. If AutoTyper stops typing after an update, switch it off and on again in the
 Accessibility list, or remove it with **-** and add it again.
 
-### How to use it
+### How to use it on a Mac
 
 Use it as described under [How to use it](#how-to-use-it), but the default hotkey is
 **Control+Option+T**. To change it, click the Hotkey box and press the combination you want; it needs
-Control, Option, Shift or Command (or can be an F-key on its own). The hotkey, mode, delay and speed are
-remembered in `~/Library/Application Support/AutoTyper/settings.json`. The text you paste is never
-saved.
+Control, Option, Shift or Command (or can be an F-key on its own). Keys are named by their position on
+a US keyboard, so on other layouts (for example Dvorak or AZERTY) the name shown can differ from the
+letter printed on the key cap, and the default Control+Option+T is the key in that position. The hotkey,
+mode, delay and speed are remembered in `~/Library/Application Support/AutoTyper/settings.json`. The
+text you paste is never saved.
 
 ### Good to know
 
-- On macOS 15.0 and 15.1, shortcuts whose only modifier is Option (or Option+Shift) have been
-  reported to be accepted but never fire. The default, Control+Option+T, is not affected. When you
-  pick your own hotkey, add Control or Command as well.
+- On macOS 15 (reported on 15.0 and 15.1, possibly later), shortcuts whose only modifier is Option
+  (or Option+Shift) may be accepted but never fire. The default, Control+Option+T, is not affected.
+  When you pick your own hotkey, add Control or Command as well.
 - TextEdit's **Correct spelling automatically** and smart quotes can rewrite the text as it is typed,
   much as Windows 11 Notepad does on Windows. Turn them off (Edit > Spelling and Grammar, and
   Edit > Substitutions) if you need exact text there. Most other programs are not affected.
@@ -141,7 +150,10 @@ bash scripts/package-mac.sh x64     # the same for Intel: release/AutoTyper-<ver
    git push origin v1.0.1
    ```
 
-GitHub Actions then runs the tests, builds the zip and attaches it to a new release.
+GitHub Actions then runs the tests, builds the zips and attaches them to a new release.
+
+If a release run fails, re-run the failed jobs from the Actions tab, or delete the tag
+(`git push --delete origin vX.Y.Z`, then `git tag -d vX.Y.Z`), fix the problem and tag again.
 
 ## License
 
