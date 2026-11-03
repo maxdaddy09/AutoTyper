@@ -1,15 +1,17 @@
 name: Release
 
-# Pushing a tag such as v1.0.0 builds the download and attaches it to a GitHub Release.
+# Pushing a tag such as v1.0.0 builds the Windows and macOS downloads and attaches all of them to
+# one GitHub Release.
 on:
   push:
     tags: ['v*']
 
+# The build jobs only read the repository. Only the publish job may write, to create the release.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
+  windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,22 +22,135 @@ jobs:
 
       - name: Check the tag matches the version in the project
         shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           $version = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-          if ("v$version" -ne "${{ github.ref_name }}") {
-            throw "Tag ${{ github.ref_name }} does not match version $version in Directory.Build.props"
+          if (-not $version) {
+            Write-Host "::error::No <Version> found in Directory.Build.props"
+            exit 1
+          }
+          if ("v$version" -ne $env:TAG) {
+            Write-Host "::error::Tag $env:TAG does not match version $version in Directory.Build.props (the tag for this version is v$version)"
+            exit 1
           }
 
-      # The hotkey tests register real global hotkeys and need an interactive desktop.
+      - name: Build
+        run: dotnet build AutoTyper.sln -c Release
+
+      # AutoTyper.Tests.NativeTests (the Windows hotkey tests) register real global hotkeys and need an
+      # interactive desktop, which a runner does not have. The filter skips only those. The macOS
+      # AutoTyper.Mac.Tests.NativeTests do not match it and still run.
       - name: Test
-        run: dotnet test --filter "FullyQualifiedName!~NativeTests"
+        run: dotnet test AutoTyper.sln -c Release --no-build --filter "FullyQualifiedName!~AutoTyper.Tests.NativeTests"
 
       - name: Package
         shell: pwsh
         run: ./scripts/package.ps1
 
+      - name: Upload the zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: release/AutoTyper-*-win-x64.zip
+          if-no-files-found: error
+
+  macos:
+    # Pinned (Apple Silicon) rather than macos-latest, so a new runner image cannot change the build
+    # under us. Move it on purpose, in its own commit.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # macOS ships BSD sed, so this uses only plain sed and shell, no GNU-only flags.
+      - name: Check the tag matches the version in the project
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(sed -n 's:.*<Version>\([^<]*\)</Version>.*:\1:p' Directory.Build.props | sed -n '1p')
+          if [ -z "$version" ]; then
+            echo "::error::No <Version> found in Directory.Build.props"
+            exit 1
+          fi
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match version $version in Directory.Build.props (the tag for this version is v$version)"
+            exit 1
+          fi
+
+      - name: Test Core
+        run: dotnet test AutoTyper.Core.Tests
+
+      # SelfTest_ReportsAccordingToThePlatform runs the real native self-test, which could fail for a
+      # reason that has to do with a headless runner and not with the code. A release must never be
+      # blocked by it, so it is left out here. ci.yml runs it on every push, where a failure does block.
+      - name: Test Mac
+        run: dotnet test AutoTyper.Mac.Tests --filter "FullyQualifiedName!~SelfTest_ReportsAccordingToThePlatform"
+
+      - name: Package for Apple Silicon
+        run: bash scripts/package-mac.sh arm64
+
+      # The script keeps the zip it made before, so both zips end up in release/.
+      - name: Package for Intel
+        run: bash scripts/package-mac.sh x64
+
+      # Unpacks the zip that will be shipped and runs the app from there. continue-on-error: the result
+      # shows in the log, but a self-test that fails on a runner does not stop the release. ci.yml has
+      # the same check as a blocking step.
+      - name: Self-test the packaged Apple Silicon app
+        continue-on-error: true
+        shell: bash
+        run: |
+          zips=(release/AutoTyper-*-macos-arm64.zip)
+          if [ "${#zips[@]}" -ne 1 ] || [ ! -f "${zips[0]}" ]; then
+            echo "::error::Expected exactly one release/AutoTyper-*-macos-arm64.zip, found: ${zips[*]}"
+            exit 1
+          fi
+          scratch="$RUNNER_TEMP/selftest"
+          rm -rf "$scratch"
+          mkdir -p "$scratch"
+          ditto -x -k "${zips[0]}" "$scratch"
+          exe="$scratch/$(basename "${zips[0]}" .zip)/AutoTyper.app/Contents/MacOS/AutoTyper"
+          if [ ! -x "$exe" ]; then
+            echo "::error::$exe is missing or not executable"
+            find "$scratch" -maxdepth 3
+            exit 1
+          fi
+          "$exe" --selftest
+
+      - name: Upload the zips
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-zips
+          path: release/AutoTyper-*-macos-*.zip
+          if-no-files-found: error
+
+  # The one job that creates the release, and it waits for both build jobs. Two jobs each creating
+  # it would race, and one platform failing would leave a release with only the other platform's zip.
+  publish:
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the zips
+        uses: actions/download-artifact@v4
+        with:
+          path: zips
+          merge-multiple: true
+
+      # One pattern per zip, so that fail_on_unmatched_files stops the release if any of the three
+      # is missing instead of publishing without it.
       - name: Create the release
         uses: softprops/action-gh-release@v2
         with:
-          files: release/*.zip
+          files: |
+            zips/AutoTyper-*-win-x64.zip
+            zips/AutoTyper-*-macos-arm64.zip
+            zips/AutoTyper-*-macos-x64.zip
+          fail_on_unmatched_files: true
           generate_release_notes: true
