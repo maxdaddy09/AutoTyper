@@ -91,26 +91,36 @@ function Prop($property, $value) { New-Object System.Windows.Automation.Property
 
 # Starts a copy of the app and remembers its process. The window is found through that process
 # only. Windows are never searched for by title or enumerated.
+#
+# The scenarios call this before their own try/finally, so a start that fails (it throws) must not
+# leave the process it started running: it is stopped here, by its process object, before the error
+# goes on. A copy still held from an earlier start is stopped first, so none is ever orphaned.
 function Start-App([bool]$fresh) {
+    Stop-App
     if ($fresh) { Remove-Item $settingsPath -ErrorAction SilentlyContinue }
     $p = Start-Process $ExePath -PassThru
     $script:app = $p
-    # A cold start of an Avalonia app takes a few seconds.
-    for ($i = 0; $i -lt 80 -and $p.MainWindowHandle -eq [IntPtr]::Zero -and -not $p.HasExited; $i++) {
-        Start-Sleep -Milliseconds 250
-        $p.Refresh()
+    try {
+        # A cold start of an Avalonia app takes a few seconds.
+        for ($i = 0; $i -lt 80 -and $p.MainWindowHandle -eq [IntPtr]::Zero -and -not $p.HasExited; $i++) {
+            Start-Sleep -Milliseconds 250
+            $p.Refresh()
+        }
+        if ($p.HasExited) { throw "AutoTyper exited at start with code $($p.ExitCode)" }
+        if ($p.MainWindowHandle -eq [IntPtr]::Zero) { throw 'AutoTyper window did not appear within 20 s' }
+        $script:appWin = $AE::FromHandle($p.MainWindowHandle)
+        # The window exists before its controls are published to UI Automation: wait for the status text.
+        for ($i = 0; $i -lt 40; $i++) {
+            $status = Ctl 'statusLabel'
+            if ($status -and $status.Current.Name) { break }
+            Start-Sleep -Milliseconds 250
+        }
+        if (-not (Ctl 'statusLabel')) { throw 'the status label did not appear in the window' }
+        Start-Sleep -Milliseconds 300
+    } catch {
+        Stop-App
+        throw
     }
-    if ($p.HasExited) { throw "AutoTyper exited at start with code $($p.ExitCode)" }
-    if ($p.MainWindowHandle -eq [IntPtr]::Zero) { throw 'AutoTyper window did not appear within 20 s' }
-    $script:appWin = $AE::FromHandle($p.MainWindowHandle)
-    # The window exists before its controls are published to UI Automation: wait for the status text.
-    for ($i = 0; $i -lt 40; $i++) {
-        $status = Ctl 'statusLabel'
-        if ($status -and $status.Current.Name) { break }
-        Start-Sleep -Milliseconds 250
-    }
-    if (-not (Ctl 'statusLabel')) { throw 'the status label did not appear in the window' }
-    Start-Sleep -Milliseconds 300
 }
 
 # Closes only the process started by Start-App.
@@ -194,20 +204,10 @@ try {
             $missing = @('textBox', 'hotkeyBox', 'lettersRadio', 'wordsRadio', 'delayInput', 'wpmCheck', 'wpmInput', 'statusLabel') |
                 Where-Object { -not (Ctl $_) }
             if ($missing) { return "not found in the window: $($missing -join ', ')" }
-
-            # permissionButton is hidden while permission is granted (always, in preview), and UI
-            # Automation does not publish hidden controls. So its id can only be checked in the
-            # compiled app: the string is in the assembly next to the exe.
-            $dll = [IO.File]::ReadAllBytes((Join-Path (Split-Path $ExePath) 'AutoTyper.dll'))
-            $needle = [Text.Encoding]::Unicode.GetBytes('permissionButton')
-            $found = $false
-            for ($i = 0; $i -le $dll.Length - $needle.Length -and -not $found; $i++) {
-                if ($dll[$i] -ne $needle[0]) { continue }
-                $j = 1
-                while ($j -lt $needle.Length -and $dll[$i + $j] -eq $needle[$j]) { $j++ }
-                $found = ($j -eq $needle.Length)
-            }
-            if (-not $found) { return 'the id permissionButton is not in AutoTyper.dll' }
+            # permissionButton is not checked here: it is hidden unless permission is missing (never,
+            # in preview), and UI Automation does not publish hidden controls, so this script cannot
+            # see it. Its id, default visibility and text are covered by MainWindowXamlTests in
+            # AutoTyper.Mac.Tests, and by the macOS checklist.
         } finally { Stop-App }
     }
 
@@ -219,9 +219,10 @@ try {
             if ((Get-AppDelay) -ne '50') { return "delay is '$(Get-AppDelay)', expected 50" }
             if ((Get-BoxText 'hotkeyBox') -ne 'Control+Option+T') { return "hotkey is '$(Get-BoxText 'hotkeyBox')', expected Control+Option+T" }
             if ((Get-Status) -ne $previewStatus) { return "status is '$(Get-Status)'" }
-            # Hidden controls are left out of the UI Automation tree.
+            # Hidden controls are left out of the UI Automation tree, so this fails only if a control with
+            # this id is visible. It cannot tell "hidden" from "missing" (see MainWindowXamlTests).
             $button = Ctl 'permissionButton'
-            if ($button -and -not $button.Current.IsOffscreen) { return 'the permission button is shown' }
+            if ($button -and -not $button.Current.IsOffscreen) { return 'permissionButton is visible' }
         } finally { Stop-App }
     }
 
