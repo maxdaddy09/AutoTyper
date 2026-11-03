@@ -13,6 +13,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -54,11 +55,13 @@ jobs:
           name: windows-zip
           path: release/AutoTyper-*-win-x64.zip
           if-no-files-found: error
+          retention-days: 1
 
   macos:
     # Pinned (Apple Silicon) rather than macos-latest, so a new runner image cannot change the build
     # under us. Move it on purpose, in its own commit.
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -85,9 +88,10 @@ jobs:
       - name: Test Core
         run: dotnet test AutoTyper.Core.Tests
 
-      # SelfTest_ReportsAccordingToThePlatform runs the real native self-test, which could fail for a
-      # reason that has to do with a headless runner and not with the code. A release must never be
-      # blocked by it, so it is left out here. ci.yml runs it on every push, where a failure does block.
+      # SelfTest_ReportsAccordingToThePlatform is left out here so that a release can never be blocked by
+      # it. On a Mac it no longer runs the native self-test (it returns early; the packaged-app self-test
+      # below is the real check), but the filter stays as a second safeguard. ci.yml runs the test on
+      # every push.
       - name: Test Mac
         run: dotnet test AutoTyper.Mac.Tests --filter "FullyQualifiedName!~SelfTest_ReportsAccordingToThePlatform"
 
@@ -102,6 +106,8 @@ jobs:
       # shows in the log, but a self-test that fails on a runner does not stop the release. ci.yml has
       # the same check as a blocking step.
       - name: Self-test the packaged Apple Silicon app
+        id: selftest
+        timeout-minutes: 5
         continue-on-error: true
         shell: bash
         run: |
@@ -122,18 +128,27 @@ jobs:
           fi
           "$exe" --selftest
 
+      # continue-on-error keeps the job green, which hides the failure in the run summary. This puts a
+      # warning there.
+      - name: Warn that the macOS self-test failed
+        if: steps.selftest.outcome == 'failure'
+        run: |
+          echo "::warning::macOS --selftest failed (not blocking the release): see the step log"
+
       - name: Upload the zips
         uses: actions/upload-artifact@v4
         with:
           name: macos-zips
           path: release/AutoTyper-*-macos-*.zip
           if-no-files-found: error
+          retention-days: 1
 
   # The one job that creates the release, and it waits for both build jobs. Two jobs each creating
   # it would race, and one platform failing would leave a release with only the other platform's zip.
   publish:
     needs: [windows, macos]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:

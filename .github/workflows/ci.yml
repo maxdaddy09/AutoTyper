@@ -13,6 +13,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -33,6 +34,7 @@ jobs:
     # Pinned (Apple Silicon) rather than macos-latest, so a new runner image cannot change the build
     # under us. Move it on purpose, in its own commit.
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -49,9 +51,16 @@ jobs:
       - name: Package for Apple Silicon
         run: bash scripts/package-mac.sh arm64
 
+      # The Intel zip is not tested or uploaded from here (the self-test and the upload below pick the
+      # arm64 zip only). Building it makes CI exercise the Intel cross-publish on every push, so a
+      # release tag does not meet a problem with it for the first time.
+      - name: Package for Intel
+        run: bash scripts/package-mac.sh x64
+
       # Unpacks the zip that would be shipped and runs the app from there, so this checks the zipped
       # app and not just the build folder. Blocking: a failure here fails the job.
       - name: Self-test the packaged app
+        timeout-minutes: 5
         shell: bash
         run: |
           zips=(release/AutoTyper-*-macos-arm64.zip)
@@ -77,3 +86,4 @@ jobs:
           name: macos-arm64-zip
           path: release/AutoTyper-*-macos-arm64.zip
           if-no-files-found: error
+          retention-days: 7
