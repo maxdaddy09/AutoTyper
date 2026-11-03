@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>AutoTyper</AssemblyName>
+    <RootNamespace>AutoTyper.Mac</RootNamespace>
+    <Version>1.0.0</Version>
+    <Product>AutoTyper</Product>
+    <Authors>Max Simon</Authors>
+    <Copyright>Copyright (c) 2026 Max Simon</Copyright>
+    <Description>Types pasted text into any window, as real keystrokes, when you press a hotkey.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+  </ItemGroup>
+
+</Project>
