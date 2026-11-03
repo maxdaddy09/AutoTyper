@@ -11,7 +11,13 @@ internal static class Program
         "settings.json");
 
     [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    public static int Main(string[] args)
+    {
+        // The self-test runs before Avalonia starts: it opens no window and needs no permission.
+        if (args.Contains("--selftest")) return NativeSelfTest.Run(Console.Out);
+
+        return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    }
 
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<App>()
