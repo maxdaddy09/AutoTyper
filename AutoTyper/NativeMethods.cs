@@ -4,12 +4,6 @@ namespace AutoTyper;
 
 public static class NativeMethods
 {
-    [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
-    public static extern uint TimeBeginPeriod(uint milliseconds);
-
-    [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
-    public static extern uint TimeEndPeriod(uint milliseconds);
-
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);

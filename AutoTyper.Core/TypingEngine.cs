@@ -44,7 +44,7 @@ public sealed class TypingEngine
             .ToList();
 
         // Without this, Windows rounds short waits up to about 15 ms.
-        NativeMethods.TimeBeginPeriod(1);
+        WindowsTimerResolution.Begin();
         try
         {
             var nextStart = 0.0;
@@ -93,7 +93,7 @@ public sealed class TypingEngine
         }
         finally
         {
-            NativeMethods.TimeEndPeriod(1);
+            WindowsTimerResolution.End();
         }
     }
 

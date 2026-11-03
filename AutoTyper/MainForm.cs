@@ -9,7 +9,7 @@ public sealed class MainForm : Form
     const int VkRightWin = 0x5C;
     const int ModifierReleaseTimeoutMs = 3000;
 
-    readonly Settings settings = Settings.Load(Settings.DefaultPath);
+    readonly Settings settings = Settings.Load(AppPaths.SettingsPath);
     readonly HotkeyRegistrar registrar = new();
     readonly IKeySender keySender = new SendInputKeySender();
     readonly System.Windows.Forms.Timer progressTimer = new() { Interval = 100 };
@@ -333,7 +333,7 @@ public sealed class MainForm : Form
         settings.DelayMs = (int)delayInput.Value;
         settings.UseWpm = wpmCheck.Checked;
         settings.Wpm = (int)wpmInput.Value;
-        if (!settings.TrySave(Settings.DefaultPath, out var error))
+        if (!settings.TrySave(AppPaths.SettingsPath, out var error))
             SetStatus($"Could not save settings: {error}");
     }
 

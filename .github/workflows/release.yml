@@ -21,9 +21,9 @@ jobs:
       - name: Check the tag matches the version in the project
         shell: pwsh
         run: |
-          $version = ([xml](Get-Content AutoTyper/AutoTyper.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          $version = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
           if ("v$version" -ne "${{ github.ref_name }}") {
-            throw "Tag ${{ github.ref_name }} does not match version $version in AutoTyper/AutoTyper.csproj"
+            throw "Tag ${{ github.ref_name }} does not match version $version in Directory.Build.props"
           }
 
       # The hotkey tests register real global hotkeys and need an interactive desktop.

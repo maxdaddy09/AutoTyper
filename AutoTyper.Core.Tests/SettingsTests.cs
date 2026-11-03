@@ -16,11 +16,11 @@ public class SettingsTests : IDisposable
     string PathFor(string name = "settings.json") => Path.Combine(dir, name);
 
     [Fact]
-    public void Defaults_AreCtrlAltT_Letters_50()
+    public void Defaults_HotkeyIsEmpty_ModeIsLetters_DelayIs50()
     {
         var settings = new Settings();
 
-        Assert.Equal("Ctrl+Alt+T", settings.Hotkey);
+        Assert.Equal("", settings.Hotkey);
         Assert.Equal(TypingMode.Letters, settings.Mode);
         Assert.Equal(50, settings.DelayMs);
     }
@@ -43,7 +43,7 @@ public class SettingsTests : IDisposable
     {
         var loaded = Settings.Load(PathFor("nope.json"));
 
-        Assert.Equal("Ctrl+Alt+T", loaded.Hotkey);
+        Assert.Equal("", loaded.Hotkey);
         Assert.Equal(TypingMode.Letters, loaded.Mode);
         Assert.Equal(50, loaded.DelayMs);
     }
@@ -55,7 +55,7 @@ public class SettingsTests : IDisposable
 
         var loaded = Settings.Load(PathFor());
 
-        Assert.Equal("Ctrl+Alt+T", loaded.Hotkey);
+        Assert.Equal("", loaded.Hotkey);
         Assert.Equal(50, loaded.DelayMs);
     }
 

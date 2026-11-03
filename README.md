@@ -61,7 +61,7 @@ close any copy of AutoTyper first.
 
 ## Making a release
 
-1. Change `<Version>` in `AutoTyper/AutoTyper.csproj` and commit.
+1. Change `<Version>` in `Directory.Build.props` and commit.
 2. Tag the commit with the same number and push the tag:
 
    ```powershell

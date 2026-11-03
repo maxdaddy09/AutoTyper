@@ -1,14 +1,15 @@
 # Builds the download: release\AutoTyper-<version>-win-x64.zip, holding a self-contained
 # AutoTyper.exe (nothing to install), README.txt and LICENSE.txt. The version comes from
-# AutoTyper\AutoTyper.csproj.
+# Directory.Build.props.
 #
 #   powershell -File scripts\package.ps1
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path $PSScriptRoot -Parent
 $project = Join-Path $root 'AutoTyper\AutoTyper.csproj'
-$version = ([xml](Get-Content $project)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-if (-not $version) { throw "No <Version> found in $project" }
+$props = Join-Path $root 'Directory.Build.props'
+$version = ([xml](Get-Content $props)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+if (-not $version) { throw "No <Version> found in $props" }
 
 $release = Join-Path $root 'release'
 $staging = Join-Path $release 'staging'

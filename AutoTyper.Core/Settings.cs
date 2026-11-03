@@ -17,16 +17,14 @@ public sealed class Settings
         Converters = { new JsonStringEnumConverter() },
     };
 
-    public string Hotkey { get; set; } = HotkeyBinding.Default.ToString();
+    // Empty means "use the platform's default": each app picks its own and writes it back.
+    public string Hotkey { get; set; } = "";
     public TypingMode Mode { get; set; } = TypingMode.Letters;
     public int DelayMs { get; set; } = 50;
 
     // Words mode only: pace by words per minute instead of a delay after each word.
     public bool UseWpm { get; set; }
     public int Wpm { get; set; } = 60;
-
-    public static string DefaultPath { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AutoTyper", "settings.json");
 
     public static Settings Load(string path)
     {

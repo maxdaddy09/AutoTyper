@@ -7,11 +7,12 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.0.0</Version>
     <Product>AutoTyper</Product>
-    <Authors>Max Simon</Authors>
-    <Copyright>Copyright (c) 2026 Max Simon</Copyright>
     <Description>Types pasted text into any window, as real keystrokes, when you press a hotkey.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AutoTyper.Core\AutoTyper.Core.csproj" />
+  </ItemGroup>
 
 </Project>
