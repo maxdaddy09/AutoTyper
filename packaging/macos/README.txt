@@ -2,10 +2,11 @@ AutoTyper for Mac
 =================
 
 Paste text into AutoTyper, click into any window, press a hotkey, and AutoTyper types
-the text there as real keystrokes. It works in fields that block pasting.
+the text there as real keystrokes. Because it types instead of pasting, it should work
+in fields that block pasting.
 
-Needs macOS 15 (Sequoia) or newer. The Intel version has not been tested yet; the
-Apple Silicon version is the one that has. The Mac version is new, so if something
+Needs macOS 15 (Sequoia) or newer. The Intel version has not been tested yet. The
+Apple Silicon version is the one being tested. The Mac version is new, so if something
 does not work for you, please say so on the project's GitHub page.
 
 Open it the first time

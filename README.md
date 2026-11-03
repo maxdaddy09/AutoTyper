@@ -50,7 +50,7 @@ Tested on Windows 11 (64-bit).
 
 ## AutoTyper on macOS
 
-**Status:** the macOS version is new in 1.1.0 and has had little testing on real Macs. Test reports
+**Status:** the macOS version is new in 1.1.0 and is still being tested on real Macs. Test reports
 are welcome: [docs/macos-testing.md](docs/macos-testing.md) lists what to try and what to include in
 a report.
 
