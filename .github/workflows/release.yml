@@ -1,0 +1,41 @@
+name: Release
+
+# Pushing a tag such as v1.0.0 builds the download and attaches it to a GitHub Release.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Check the tag matches the version in the project
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content AutoTyper/AutoTyper.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            throw "Tag ${{ github.ref_name }} does not match version $version in AutoTyper/AutoTyper.csproj"
+          }
+
+      # The hotkey tests register real global hotkeys and need an interactive desktop.
+      - name: Test
+        run: dotnet test --filter "FullyQualifiedName!~NativeTests"
+
+      - name: Package
+        shell: pwsh
+        run: ./scripts/package.ps1
+
+      - name: Create the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.zip
+          generate_release_notes: true

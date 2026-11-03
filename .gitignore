@@ -1,0 +1,9 @@
+bin/
+obj/
+dist/
+release/
+.vs/
+*.user
+*.suo
+docs/superpowers/
+.superpowers/
