@@ -2,6 +2,85 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="AutoTyper.Mac.MainWindow"
         Title="AutoTyper"
-        Width="480" Height="320">
-  <TextBlock Text="AutoTyper" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        Width="640" Height="460"
+        MinWidth="520" MinHeight="400"
+        WindowStartupLocation="CenterScreen">
+  <Grid Margin="12" RowDefinitions="Auto,*,Auto,Auto,Auto,Auto" RowSpacing="8">
+
+    <TextBlock Grid.Row="0" Text="Text to type" />
+
+    <!-- No MaxLength: the default is unlimited, so a long paste is never cut off. Tab keeps moving focus. -->
+    <TextBox x:Name="textBox" Grid.Row="1"
+             AutomationProperties.AutomationId="textBox"
+             AutomationProperties.Name="Text to type"
+             AcceptsReturn="True"
+             TextWrapping="Wrap"
+             VerticalContentAlignment="Top" />
+
+    <StackPanel Grid.Row="2" Spacing="6">
+      <WrapPanel>
+        <TextBlock Text="Hotkey" VerticalAlignment="Center" Margin="0,0,6,0" />
+        <TextBox x:Name="hotkeyBox"
+                 AutomationProperties.AutomationId="hotkeyBox"
+                 AutomationProperties.Name="Hotkey"
+                 ToolTip.Tip="Click here, then press the new hotkey"
+                 IsReadOnly="True"
+                 Width="190" />
+        <TextBlock Text="Mode" VerticalAlignment="Center" Margin="16,0,6,0" />
+        <RadioButton x:Name="lettersRadio"
+                     AutomationProperties.AutomationId="lettersRadio"
+                     GroupName="mode"
+                     Content="Letters"
+                     Margin="0,0,12,0"
+                     IsChecked="True" />
+        <RadioButton x:Name="wordsRadio"
+                     AutomationProperties.AutomationId="wordsRadio"
+                     GroupName="mode"
+                     Content="Words" />
+      </WrapPanel>
+
+      <WrapPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,0">
+          <TextBlock Text="Delay (ms)" VerticalAlignment="Center" />
+          <NumericUpDown x:Name="delayInput"
+                         AutomationProperties.AutomationId="delayInput"
+                         AutomationProperties.Name="Delay (ms)"
+                         Minimum="0" Maximum="60000" Increment="10"
+                         FormatString="0"
+                         ParsingNumberStyle="Integer"
+                         ClipValueToMinMax="True"
+                         Value="50"
+                         Width="130" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <CheckBox x:Name="wpmCheck"
+                    AutomationProperties.AutomationId="wpmCheck"
+                    Content="Words per minute" />
+          <NumericUpDown x:Name="wpmInput"
+                         AutomationProperties.AutomationId="wpmInput"
+                         AutomationProperties.Name="Words per minute"
+                         Minimum="1" Maximum="1000" Increment="5"
+                         FormatString="0"
+                         ParsingNumberStyle="Integer"
+                         ClipValueToMinMax="True"
+                         Value="60"
+                         Width="130" />
+        </StackPanel>
+      </WrapPanel>
+    </StackPanel>
+
+    <TextBlock x:Name="statusLabel" Grid.Row="3"
+               AutomationProperties.AutomationId="statusLabel"
+               TextWrapping="Wrap" />
+
+    <Button x:Name="permissionButton" Grid.Row="4"
+            AutomationProperties.AutomationId="permissionButton"
+            Content="Open Accessibility settings"
+            IsVisible="False" />
+
+    <TextBlock Grid.Row="5"
+               Foreground="Gray"
+               TextWrapping="Wrap"
+               Text="Types into the frontmost app. macOS asks you to allow AutoTyper under Privacy &amp; Security → Accessibility." />
+  </Grid>
 </Window>
