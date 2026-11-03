@@ -21,4 +21,8 @@
     <ProjectReference Include="..\AutoTyper.Core\AutoTyper.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="AutoTyper.Mac.Tests" />
+  </ItemGroup>
+
 </Project>
