@@ -31,11 +31,12 @@ internal static class Carbon
     // OSStatus InstallEventHandler(EventTargetRef inTarget, EventHandlerUPP inHandler, ItemCount inNumTypes,
     //                              const EventTypeSpec *inList, void *inUserData, EventHandlerRef *outRef);
     // The handler is a plain C function pointer (OSStatus handler(EventHandlerCallRef, EventRef, void *)).
+    // ItemCount is 'typedef unsigned long' in MacTypes.h: 64 bits on macOS, so numTypes is nuint.
     [DllImport(Library)]
     public static extern int InstallEventHandler(
         IntPtr target,
         IntPtr handler,
-        uint numTypes,
+        nuint numTypes,
         EventTypeSpec[] types,
         IntPtr userData,
         out IntPtr handlerRef);

@@ -134,6 +134,17 @@ public class NativeTests
     }
 
     [Fact]
+    public void InstallEventHandlerTakesItsTypeCountAsANativeSizedInteger()
+    {
+        var install = DeclaredImportMethods().Single(m => m.Name == "InstallEventHandler");
+
+        Assert.True(
+            install.GetParameters()[2].ParameterType == typeof(nuint),
+            "numTypes must be nuint: the C parameter is an ItemCount, which is 'typedef unsigned long ItemCount;' " +
+            "in MacTypes.h, 64 bits on macOS, and the callee reads the whole register; a uint leaves the upper half undefined.");
+    }
+
+    [Fact]
     public void SelfTest_ReportsAccordingToThePlatform()
     {
         var output = new StringWriter();
